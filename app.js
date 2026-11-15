@@ -80,7 +80,7 @@ function show(found, ctx = {}) {
   }
   const s = found.start_seconds;
   result.append(node('span', demo ? 'SIMULACIÓN FICTICIA' : 'GRABACIÓN ENCONTRADA', 'badge'),
-    node('h3', `Cancha ${found.court_number} · Tu partido`),
+    node('h3', `Cancha ${found.court_number} · Mi partido`),
     node('p', `Tu momento: ${realTime(ctx.target)} · Desde ${Math.floor(s / 3600) ? Math.floor(s / 3600) + ' h ' : ''}${Math.floor(s % 3600 / 60)} min ${s % 60} s del video.`));
   if (found.snapped_seconds > 0) result.append(node('small', `Hubo un microcorte de la cámara: el video arranca ${found.snapped_seconds.toFixed(1)} s después.`));
   if (demo) result.append(node('p', 'Cálculo correcto. En la versión real este botón abre el video; la demo no usa enlaces a partidos.'));
