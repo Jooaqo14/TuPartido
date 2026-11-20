@@ -8,36 +8,57 @@ const dataBase = demo ? 'data/demo/' : 'data/';
 
 $('#demo-notice').hidden = !demo;
 const today = localDay();
-$('#day').max = demo ? DEMO_DAY : today;
+const WD = d => new Date(d + 'T12:00:00Z').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+const addDays = (d, n) => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+const cap = t => t[0].toUpperCase() + t.slice(1);
+function fillDays(extra) {
+  const top = demo ? DEMO_DAY : today, days = [];
+  for (let i = 0; i < 45; i++) days.push(addDays(top, -i));
+  if (extra && !days.includes(extra)) days.push(extra);
+  $('#day').replaceChildren(...days.map((d, i) => {
+    const o = document.createElement('option'); o.value = d;
+    o.textContent = cap(WD(d)) + (demo ? '' : i === 0 ? ' (hoy)' : i === 1 ? ' (ayer)' : '');
+    return o;
+  }));
+}
+fillDays();
 $('#day').value = demo ? DEMO_DAY : today;
+for (let h = 0; h < 24; h++) $('#hh').append(new Option(String(h).padStart(2, '0'), String(h).padStart(2, '0')));
+for (let m = 0; m < 60; m++) $('#mm').append(new Option(String(m).padStart(2, '0'), String(m).padStart(2, '0')));
+function setTime(v) { const [h, m] = v.split(':'); $('#hh').value = h; $('#mm').value = m; $('#time').value = `${h}:${m}`; }
+setTime('20:05');
 
 // Enlaces duraderos: ?cancha=1&fecha=2026-10-31&hora=20:09:42 (resuelve siempre la versión vigente).
 const courtParam = params.get('cancha'), dayParam = params.get('fecha'), timeParam = params.get('hora');
 if (['1', '2', '3'].includes(courtParam)) form.elements.court.value = courtParam;
-if (dayParam && validDate(dayParam)) $('#day').value = dayParam;
+if (dayParam && validDate(dayParam)) { fillDays(dayParam); $('#day').value = dayParam; }
 if (timeParam && validClock(timeParam)) {
-  if (timeParam.length === 8) $('#time').step = 1;  // mostrar segundos
-  $('#time').value = timeParam;
+  setTime(timeParam.slice(0, 5));
+  if (timeParam.length === 8) $('#time').value = timeParam;  // conserva los segundos del enlace
 }
 
 function preview() {
-  try { $('#date-preview').textContent = `Vas a buscar el ${realTime(targetInstant($('#day').value, $('#time').value))} (hora real de Mendoza).`; }
+  try { $('#date-preview').textContent = `Vas a buscar: ${realTime(targetInstant($('#day').value, $('#time').value))}.`; }
   catch { $('#date-preview').textContent = ''; }
+  $('#day-help').hidden = Number($('#hh').value) >= 6;
+  $('#recent-note').hidden = demo || $('#day').value < addDays(today, -3);
 }
-form.addEventListener('input', preview);
+form.addEventListener('input', e => {
+  if (e.target.id === 'hh' || e.target.id === 'mm') $('#time').value = `${$('#hh').value}:${$('#mm').value}`;
+  preview();
+});
 document.querySelectorAll('[data-shift]').forEach(b => b.onclick = () => {
-  const [h, m] = $('#time').value.split(':').map(Number);
-  const t = ((h * 60 + m + Number(b.dataset.shift)) % 1440 + 1440) % 1440;
-  $('#time').value = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+  const t = ((Number($('#hh').value) * 60 + Number($('#mm').value) + Number(b.dataset.shift)) % 1440 + 1440) % 1440;
+  setTime(`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`);
   preview();
 });
 preview();
 $('#search-button').disabled = false;
-result.textContent = demo ? 'Probá Cancha 2 · 23/10/2026 · 00:30. La demo simula una consulta posterior a esa jornada.' : 'Todo listo. Elegí cuándo jugaste.';
+result.textContent = demo ? 'Probá Cancha 2 · 23/10/2026 · 00:30. La demo simula una consulta posterior a esa jornada.' : 'Para empezar, tocá tu cancha.';
 
 const messages = {
   future: ['Todavía no llegó ese momento', 'Elegí una fecha y hora que ya hayan pasado.'],
-  [R.NOT_PUBLISHED]: ['El video todavía no está disponible', 'El video de esta cancha y fecha todavía no se publicó. Las grabaciones se publican al día siguiente. Si pasaron varios días, consultá en el complejo.'],
+  [R.NOT_PUBLISHED]: ['El video todavía no está disponible', 'Los videos se suben con demora: puede tardar unos días después del partido. Volvé a probar más tarde. Si pasó más de una semana, consultá en el complejo.'],
   [R.PROCESSING]: ['El video se está preparando', 'Ya está en camino. Volvé a probar más tarde.'],
   [R.NOT_RECORDED]: ['No hay grabación para esa hora', 'Para esta cancha y jornada no existe grabación en el horario que elegiste.'],
   [R.GAP]: ['Hubo una interrupción en la grabación', 'Este momento no está disponible porque hubo un corte en la grabación.'],
@@ -53,6 +74,7 @@ const span = iv => `${realClock(Date.parse(iv.real_start))} → ${realClock(Date
 form.onsubmit = async e => {
   e.preventDefault();
   const court = form.elements.court.value, day = $('#day').value, time = $('#time').value;
+  if (!court) { result.replaceChildren(node('h3', 'Falta elegir la cancha'), node('p', 'Tocá Cancha 1, 2 o 3 en la parte de arriba y volvé a apretar “Ver mi partido”.')); return; }
   result.replaceChildren(document.createTextNode('Buscando tu partido…'));
   $('#search-button').disabled = true;
   try {
@@ -101,7 +123,7 @@ function show(found, ctx = {}) {
   }
   if (found.snapped_seconds > 0) result.append(node('small', `Hubo un microcorte de la cámara: el video arranca ${found.snapped_seconds.toFixed(1)} s después.`));
   if (demo) result.append(node('p', 'Cálculo correcto. En la versión real este botón abre el video; la demo no usa enlaces a partidos.'));
-  else { const a = node('a', 'Ver en YouTube ↗', 'primary'); a.href = found.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; result.append(a); }
+  else { const a = node('a', 'Ver en YouTube ↗', 'primary'); a.href = found.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; result.append(a, node('small', 'Se abre YouTube justo en ese momento del partido.')); }
   result.append(node('small', `Cancha ${found.court_number} · Jornada ${fmtDay(found.sport_date)} · Video versión ${found.video_version}.`));
 }
 
