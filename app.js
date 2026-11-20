@@ -126,8 +126,13 @@ form.onsubmit = async e => {
   e.preventDefault();
   clearTimeout(redirTimer);
   const auto = !fromParams; fromParams = false;
+  let tab = null, navigated = false;
   const court = form.elements.court.value, day = $('#day').value, time = $('#time').value;
   if (!court) { result.replaceChildren(node('h3', 'Falta elegir la cancha'), node('p', 'Tocá Cancha 1, 2 o 3 en la parte de arriba y volvé a apretar “Ver mi partido”.')); return; }
+  // La pestaña nueva se abre ya (con el toque del usuario) para que el navegador no la bloquee; después se le pone el link.
+  if (auto && !demo) {
+    try { tab = window.open('', '_blank'); if (tab) { tab.opener = null; tab.document.title = 'Mi partido'; tab.document.body.style.cssText = 'font:18px sans-serif;background:#14372f;color:#c8ef7e;display:grid;place-items:center;height:100vh;margin:0'; tab.document.body.textContent = 'Buscando tu partido…'; } } catch { tab = null; }
+  }
   result.replaceChildren(document.createTextNode('Buscando tu partido…'));
   $('#search-button').disabled = true;
   try {
@@ -148,14 +153,15 @@ form.onsubmit = async e => {
     }
     show(found, ctx);
     if (found.result === R.AVAILABLE && !demo && auto) {
-      result.append(node('p', 'Abriendo YouTube en ese momento…', 'redir'));
-      redirTimer = setTimeout(() => location.assign(found.url), ctx.asked ? 4000 : 1200);
+      if (tab) { tab.location.href = found.url; navigated = true; result.append(node('p', 'Abrimos tu partido en otra pestaña de YouTube.', 'redir')); }
+      else result.append(node('p', 'Tu navegador bloqueó la pestaña nueva: tocá el botón verde para abrir el video.', 'redir'));
     }
     if (!demo) history.replaceState(null, '', `?cancha=${court}&fecha=${day}&hora=${time}`);
   } catch (err) {
     result.replaceChildren(node('h3', 'No pudimos cargar las grabaciones'), node('p', 'Revisá tu conexión. '));
     const b = node('button', 'Reintentar'); b.type = 'button'; b.onclick = () => form.requestSubmit(); result.append(b);
   } finally {
+    if (tab && !navigated) { try { tab.close(); } catch {} }
     $('#search-button').disabled = false;
   }
 };
