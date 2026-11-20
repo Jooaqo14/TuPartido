@@ -1,4 +1,4 @@
-import { searchOnline, targetInstant, realTime, realClock, localDay, validDate, validClock, nearestAvailable, R } from './core.js?v=3';
+import { searchOnline, targetInstant, realTime, realClock, localDay, validDate, validClock, nearestAvailable, R } from './core.js?v=6';
 
 const $ = s => document.querySelector(s), form = $('#search-form'), result = $('#result');
 const params = new URLSearchParams(location.search);
@@ -120,6 +120,16 @@ const messages = {
 
 function node(tag, text, cls) { const el = document.createElement(tag); el.textContent = text; if (cls) el.className = cls; return el; }
 const fmtDay = d => d.split('-').reverse().join('/');
+// Une tramos pegados (microcortes de la cámara) para que la lista de horarios sea legible.
+const mergeIv = list => {
+  const out = [];
+  for (const iv of [...list].sort((x, y) => Date.parse(x.real_start) - Date.parse(y.real_start))) {
+    const last = out[out.length - 1];
+    if (last && Date.parse(iv.real_start) - Date.parse(last.real_end) <= 2000) last.real_end = iv.real_end;
+    else out.push({ real_start: iv.real_start, real_end: iv.real_end });
+  }
+  return out;
+};
 const span = iv => `${realClock(Date.parse(iv.real_start))} → ${realClock(Date.parse(iv.real_end))}`;
 
 form.onsubmit = async e => {
@@ -172,7 +182,7 @@ function show(found, ctx = {}) {
     const [title, body] = messages[found.result] || messages[R.ERROR];
     result.append(node('h3', title), node('p', body));
     if (found.gap) result.append(node('p', `Interrupción: ${span(found.gap)}.`));
-    if (found.available && found.available.length) result.append(node('small', `Horarios disponibles: ${found.available.map(span).join(' · ')}.`));
+    if (found.available && found.available.length) result.append(node('small', `Horarios disponibles: ${mergeIv(found.available).map(span).join(' · ')}.`));
     return;
   }
   const s = found.start_seconds;

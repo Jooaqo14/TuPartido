@@ -130,7 +130,7 @@ export async function resolveQuery(index, loadManifest, courtNumber, sportDate, 
 export function nearestAvailable(available, when, maxS = Infinity) {
   let best = null;
   for (const iv of available || []) {
-    const a = Date.parse(iv.real_start), b = Date.parse(iv.real_end) - 1000;
+    const a = Math.ceil(Date.parse(iv.real_start) / 1000) * 1000, b = Math.floor((Date.parse(iv.real_end) - 1000) / 1000) * 1000;  // segundos enteros adentro del intervalo
     if (!(b >= a)) continue;
     for (const [ms, side] of [[a, 'after'], [b, 'before']]) {
       const d = Math.abs(ms - when) / 1000;
