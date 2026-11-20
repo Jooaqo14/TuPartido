@@ -1,4 +1,4 @@
-import { searchOnline, targetInstant, realTime, realClock, localDay, validDate, validClock, nearestAvailable, R } from './core.js';
+import { searchOnline, targetInstant, realTime, realClock, localDay, validDate, validClock, nearestAvailable, R } from './core.js?v=3';
 
 const $ = s => document.querySelector(s), form = $('#search-form'), result = $('#result');
 const params = new URLSearchParams(location.search);
@@ -8,30 +8,83 @@ const dataBase = demo ? 'data/demo/' : 'data/';
 
 $('#demo-notice').hidden = !demo;
 const today = localDay();
+let redirTimer = null, fromParams = false;
 const WD = d => new Date(d + 'T12:00:00Z').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 const addDays = (d, n) => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const cap = t => t[0].toUpperCase() + t.slice(1);
-function fillDays(extra) {
-  const top = demo ? DEMO_DAY : today, days = [];
-  for (let i = 0; i < 45; i++) days.push(addDays(top, -i));
-  if (extra && !days.includes(extra)) days.push(extra);
-  $('#day').replaceChildren(...days.map((d, i) => {
-    const o = document.createElement('option'); o.value = d;
-    o.textContent = cap(WD(d)) + (demo ? '' : i === 0 ? ' (hoy)' : i === 1 ? ' (ayer)' : '');
-    return o;
-  }));
+const pad = n => String(n).padStart(2, '0');
+const top = demo ? DEMO_DAY : today;
+
+function setDay(v) {
+  $('#day').value = v;
+  $('#day-text').textContent = cap(WD(v)) + (demo ? '' : v === today ? ' (hoy)' : v === addDays(today, -1) ? ' (ayer)' : '');
 }
-fillDays();
-$('#day').value = demo ? DEMO_DAY : today;
-for (let h = 0; h < 24; h++) $('#hh').append(new Option(String(h).padStart(2, '0'), String(h).padStart(2, '0')));
-for (let m = 0; m < 60; m++) $('#mm').append(new Option(String(m).padStart(2, '0'), String(m).padStart(2, '0')));
-function setTime(v) { const [h, m] = v.split(':'); $('#hh').value = h; $('#mm').value = m; $('#time').value = `${h}:${m}`; }
+function setTime(v) { $('#time').value = v; $('#time-text').textContent = `${v.slice(0, 5)} hs`; }
+setDay(top);
 setTime('20:05');
+
+// ---- Ventana de selección (calendario / hora), centrada en PC y desde abajo en el celular ----
+const sheet = $('#sheet'), sbody = $('#sheet-body');
+let lastFocus = null;
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function openSheet(render) {
+  lastFocus = document.activeElement; render(); sheet.hidden = false; document.body.classList.add('noscroll');
+  (sbody.querySelector('[aria-pressed="true"]') || sbody.querySelector('button:not(:disabled)'))?.focus();
+}
+function closeSheet() { sheet.hidden = true; document.body.classList.remove('noscroll'); lastFocus && lastFocus.focus && lastFocus.focus(); }
+sheet.addEventListener('click', e => { if (e.target.hasAttribute('data-close')) closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
+function btn(text, onclick, extra = {}) {
+  const b = el('button', extra.cls, text); b.type = 'button'; b.onclick = onclick;
+  if (extra.disabled) b.disabled = true; if (extra.pressed) b.setAttribute('aria-pressed', 'true'); if (extra.label) b.setAttribute('aria-label', extra.label);
+  return b;
+}
+function renderCal(y, m) {
+  const [ty, tm] = top.split('-').map(Number), sel = $('#day').value;
+  const first = new Date(Date.UTC(y, m - 1, 1)), offset = (first.getUTCDay() + 6) % 7, dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const go = d => { const t = new Date(Date.UTC(y, m - 1 + d, 1)); renderCal(t.getUTCFullYear(), t.getUTCMonth() + 1); };
+  const head = el('div', 'sh-head');
+  head.append(btn('‹', () => go(-1), { cls: 'sh-nav', label: 'Mes anterior', disabled: y * 12 + m <= 2026 * 12 + 9 }),
+    el('div', 'sh-title', cap(first.toLocaleDateString('es-AR', { month: 'long', year: 'numeric', timeZone: 'UTC' }))),
+    btn('›', () => go(1), { cls: 'sh-nav', label: 'Mes siguiente', disabled: y * 12 + m >= ty * 12 + tm }));
+  const grid = el('div', 'cal');
+  ['L', 'M', 'M', 'J', 'V', 'S', 'D'].forEach(w => grid.append(el('span', 'wd', w)));
+  for (let i = 0; i < offset; i++) grid.append(el('span'));
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${y}-${pad(m)}-${pad(d)}`;
+    grid.append(btn(String(d), () => { setDay(ds); closeSheet(); preview(); },
+      { disabled: ds > top, pressed: ds === sel, cls: ds === today ? 'today' : '', label: cap(WD(ds)) }));
+  }
+  const foot = el('div', 'sh-foot');
+  foot.append(btn('Cerrar', closeSheet), ...(demo ? [] : [btn('Hoy', () => { setDay(today); closeSheet(); preview(); }, { cls: 'go' })]));
+  sbody.replaceChildren(head, grid, foot);
+}
+function renderHours() {
+  const cur = $('#time').value.slice(0, 2);
+  sbody.replaceChildren(el('div', 'sh-head', ''), el('p', 'sh-sub', 'Tocá la hora (la hora a la que jugaste, no la de ahora).'));
+  sbody.firstChild.append(el('div', 'sh-title', '¿A qué hora jugaste?'));
+  const g = el('div', 'grid4');
+  for (let h = 0; h < 24; h++) g.append(btn(pad(h), () => renderMinutes(pad(h)), { pressed: pad(h) === cur }));
+  const foot = el('div', 'sh-foot'); foot.append(btn('Cerrar', closeSheet));
+  sbody.append(g, foot);
+}
+function renderMinutes(hh) {
+  const cur = $('#time').value;
+  const head = el('div', 'sh-head');
+  head.append(btn('‹', renderHours, { cls: 'sh-nav', label: 'Cambiar la hora' }), el('div', 'sh-title', `${hh}:__  ¿y los minutos?`));
+  const g = el('div', 'grid4');
+  for (let m = 0; m < 60; m += 5) { const v = `${hh}:${pad(m)}`; g.append(btn(v, () => { setTime(v); closeSheet(); preview(); }, { pressed: v === cur.slice(0, 5) })); }
+  const foot = el('div', 'sh-foot'); foot.append(btn('Cerrar', closeSheet));
+  sbody.replaceChildren(head, el('p', 'sh-sub', 'Elegí lo más parecido. Después podés ajustar de a 5 minutos.'), g, foot);
+  sbody.querySelector('.grid4 button')?.focus();
+}
+$('#day-btn').onclick = () => { const [y, m] = $('#day').value.split('-').map(Number); openSheet(() => renderCal(y, m)); };
+$('#time-btn').onclick = () => openSheet(renderHours);
 
 // Enlaces duraderos: ?cancha=1&fecha=2026-10-31&hora=20:09:42 (resuelve siempre la versión vigente).
 const courtParam = params.get('cancha'), dayParam = params.get('fecha'), timeParam = params.get('hora');
 if (['1', '2', '3'].includes(courtParam)) form.elements.court.value = courtParam;
-if (dayParam && validDate(dayParam)) { fillDays(dayParam); $('#day').value = dayParam; }
+if (dayParam && validDate(dayParam)) setDay(dayParam);
 if (timeParam && validClock(timeParam)) {
   setTime(timeParam.slice(0, 5));
   if (timeParam.length === 8) $('#time').value = timeParam;  // conserva los segundos del enlace
@@ -40,17 +93,15 @@ if (timeParam && validClock(timeParam)) {
 function preview() {
   try { $('#date-preview').textContent = `Vas a buscar: ${realTime(targetInstant($('#day').value, $('#time').value))}.`; }
   catch { $('#date-preview').textContent = ''; }
-  $('#day-help').hidden = Number($('#hh').value) >= 6;
+  $('#day-help').hidden = Number($('#time').value.slice(0, 2)) >= 6;
   $('#recent-note').hidden = demo || $('#day').value < addDays(today, -3);
 }
-form.addEventListener('input', e => {
-  if (e.target.id === 'hh' || e.target.id === 'mm') $('#time').value = `${$('#hh').value}:${$('#mm').value}`;
-  preview();
-});
+form.addEventListener('input', () => { clearTimeout(redirTimer); preview(); });
 document.querySelectorAll('[data-shift]').forEach(b => b.onclick = () => {
-  const t = ((Number($('#hh').value) * 60 + Number($('#mm').value) + Number(b.dataset.shift)) % 1440 + 1440) % 1440;
-  setTime(`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`);
-  preview();
+  const [h, m] = $('#time').value.split(':').map(Number);
+  const t = ((h * 60 + m + Number(b.dataset.shift)) % 1440 + 1440) % 1440;
+  setTime(`${pad(Math.floor(t / 60))}:${pad(t % 60)}`);
+  clearTimeout(redirTimer); preview();
 });
 preview();
 $('#search-button').disabled = false;
@@ -73,6 +124,8 @@ const span = iv => `${realClock(Date.parse(iv.real_start))} → ${realClock(Date
 
 form.onsubmit = async e => {
   e.preventDefault();
+  clearTimeout(redirTimer);
+  const auto = !fromParams; fromParams = false;
   const court = form.elements.court.value, day = $('#day').value, time = $('#time').value;
   if (!court) { result.replaceChildren(node('h3', 'Falta elegir la cancha'), node('p', 'Tocá Cancha 1, 2 o 3 en la parte de arriba y volvé a apretar “Ver mi partido”.')); return; }
   result.replaceChildren(document.createTextNode('Buscando tu partido…'));
@@ -94,6 +147,10 @@ form.onsubmit = async e => {
       }
     }
     show(found, ctx);
+    if (found.result === R.AVAILABLE && !demo && auto) {
+      result.append(node('p', 'Abriendo YouTube en ese momento…', 'redir'));
+      redirTimer = setTimeout(() => location.assign(found.url), ctx.asked ? 4000 : 1200);
+    }
     if (!demo) history.replaceState(null, '', `?cancha=${court}&fecha=${day}&hora=${time}`);
   } catch (err) {
     result.replaceChildren(node('h3', 'No pudimos cargar las grabaciones'), node('p', 'Revisá tu conexión. '));
@@ -127,4 +184,4 @@ function show(found, ctx = {}) {
   result.append(node('small', `Cancha ${found.court_number} · Jornada ${fmtDay(found.sport_date)} · Video versión ${found.video_version}.`));
 }
 
-if (courtParam && dayParam && timeParam) form.requestSubmit();
+if (courtParam && dayParam && timeParam) { fromParams = true; form.requestSubmit(); }
