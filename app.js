@@ -9,6 +9,16 @@ const dataBase = demo ? 'data/demo/' : 'data/';
 $('#demo-notice').hidden = !demo;
 const today = localDay();
 let redirTimer = null, fromParams = false;
+const UA = navigator.userAgent || '';
+const ANDROID = /Android/i.test(UA), MOBILE = ANDROID || /iPhone|iPad|iPod/i.test(UA);
+// En el celular se abre la app de YouTube: en Android con un enlace "intent" (si no la tiene, cae a la web);
+// en iPhone el enlace https normal, que el sistema entrega a la app si está instalada.
+function appUrl(url) {
+  if (!ANDROID) return url;
+  const u = new URL(url);
+  return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.google.android.youtube;` +
+    `S.browser_fallback_url=${encodeURIComponent(url)};end`;
+}
 const WD = d => new Date(d + 'T12:00:00Z').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 const addDays = (d, n) => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const cap = t => t[0].toUpperCase() + t.slice(1);
@@ -140,7 +150,7 @@ form.onsubmit = async e => {
   const court = form.elements.court.value, day = $('#day').value, time = $('#time').value;
   if (!court) { result.replaceChildren(node('h3', 'Falta elegir la cancha'), node('p', 'Tocá Cancha 1, 2 o 3 en la parte de arriba y volvé a apretar “Ver mi partido”.')); return; }
   // La pestaña nueva se abre ya (con el toque del usuario) para que el navegador no la bloquee; después se le pone el link.
-  if (auto && !demo) {
+  if (auto && !demo && !MOBILE) {
     try { tab = window.open('', '_blank'); if (tab) { tab.opener = null; tab.document.title = 'Mi partido'; tab.document.body.style.cssText = 'font:18px sans-serif;background:#14372f;color:#c8ef7e;display:grid;place-items:center;height:100vh;margin:0'; tab.document.body.textContent = 'Buscando tu partido…'; } } catch { tab = null; }
   }
   result.replaceChildren(document.createTextNode('Buscando tu partido…'));
@@ -163,7 +173,11 @@ form.onsubmit = async e => {
     }
     show(found, ctx);
     if (found.result === R.AVAILABLE && !demo && auto) {
-      if (tab) { tab.location.href = found.url; navigated = true; result.append(node('p', 'Abrimos tu partido en otra pestaña de YouTube.', 'redir')); }
+      if (MOBILE) {
+        result.append(node('p', 'Abriendo la app de YouTube… Si no se abre, tocá el botón verde.', 'redir'));
+        history.replaceState(null, '', `?cancha=${court}&fecha=${day}&hora=${time}`);   // "volver" regresa a esta pantalla
+        redirTimer = setTimeout(() => { location.href = appUrl(found.url); }, ctx.asked ? 2500 : 300);
+      } else if (tab) { tab.location.href = found.url; navigated = true; result.append(node('p', 'Abrimos tu partido en otra pestaña de YouTube.', 'redir')); }
       else result.append(node('p', 'Tu navegador bloqueó la pestaña nueva: tocá el botón verde para abrir el video.', 'redir'));
     }
     if (!demo) history.replaceState(null, '', `?cancha=${court}&fecha=${day}&hora=${time}`);
@@ -191,7 +205,7 @@ function show(found, ctx = {}) {
     node('p', `${ctx.asked ? 'Momento más cercano' : 'Tu momento'}: ${realTime(ctx.target)} · Desde ${Math.floor(s / 3600) ? Math.floor(s / 3600) + ' h ' : ''}${Math.floor(s % 3600 / 60)} min ${s % 60} s del video.`));
   if (ctx.asked) {
     const min = ctx.distance >= 90 ? `${Math.round(ctx.distance / 60)} min` : `${Math.round(ctx.distance)} s`;
-    result.append(node('small', `A las ${realClock(ctx.asked)} no hay imagen (corte en la grabación). Te llevamos al momento ` +
+    result.append(node('small', `A las ${realClock(ctx.asked)} no hay grabación. Te llevamos al momento ` +
       `grabado más cercano: ${realClock(ctx.target)}, ${min} ${ctx.side === 'before' ? 'antes' : 'después'}.`));
   }
   if (found.snapped_seconds > 0) result.append(node('small', `Hubo un microcorte de la cámara: el video arranca ${found.snapped_seconds.toFixed(1)} s después.`));
