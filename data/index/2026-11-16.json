@@ -3,28 +3,43 @@
   "sport_date": "2026-11-16",
   "timezone": "America/Argentina/Mendoza",
   "day_cutoff": "06:00",
-  "generated_at": "2026-11-19T10:57:04.979-03:00",
+  "generated_at": "2026-11-20T20:04:27.496-03:00",
   "journeys": [
     {
       "journey_id": "DV-FUT-C01-20261116",
       "court_number": 1,
-      "publication_status": "processing",
-      "published_at": null,
-      "active": null
+      "publication_status": "public",
+      "published_at": "2026-11-20T16:50:44.176-03:00",
+      "active": {
+        "video_version": 1,
+        "manifest": "manifests/DV-FUT-C01-20261116/v1.json",
+        "manifest_sha256": "57174091d8336491f120357141a39fb35884078eaca4f224c6c7bf124d7a0167",
+        "youtube_video_id": "1Ei8Hrm31ZY"
+      }
     },
     {
       "journey_id": "DV-FUT-C02-20261116",
       "court_number": 2,
-      "publication_status": "processing",
-      "published_at": null,
-      "active": null
+      "publication_status": "public",
+      "published_at": "2026-11-20T19:57:49.887-03:00",
+      "active": {
+        "video_version": 1,
+        "manifest": "manifests/DV-FUT-C02-20261116/v1.json",
+        "manifest_sha256": "a2ba9e2ebe8b96cf7dcf696164ce7035414bfeccc6107ac39087c68a2c248a9c",
+        "youtube_video_id": "-6_DtUymYB8"
+      }
     },
     {
       "journey_id": "DV-FUT-C03-20261116",
       "court_number": 3,
-      "publication_status": "processing",
-      "published_at": null,
-      "active": null
+      "publication_status": "public",
+      "published_at": "2026-11-20T20:04:27.495-03:00",
+      "active": {
+        "video_version": 1,
+        "manifest": "manifests/DV-FUT-C03-20261116/v1.json",
+        "manifest_sha256": "4dcf727441fddeb68a0a6214c3a0b5d939cd29ccd375b2d626e03cbba8adf19a",
+        "youtube_video_id": "1rWDdwKdA3A"
+      }
     }
   ]
 }
