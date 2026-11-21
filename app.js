@@ -173,10 +173,10 @@ form.onsubmit = async e => {
     }
     show(found, ctx);
     if (found.result === R.AVAILABLE && !demo && auto) {
-      if (MOBILE) {
-        result.append(node('p', 'Abriendo la app de YouTube… Si no se abre, tocá el botón verde.', 'redir'));
+      if (MOBILE) {    // en el celular no se abre nada solo: el botón "Ver en YouTube" lo abre con un toque (así abre la app)
         history.replaceState(null, '', `?cancha=${court}&fecha=${day}&hora=${time}`);   // "volver" regresa a esta pantalla
-        redirTimer = setTimeout(() => { location.href = appUrl(found.url); }, ctx.asked ? 2500 : 300);
+        result.append(node('p', 'Listo, encontramos tu partido. Tocá el botón verde para abrirlo en YouTube.', 'redir'));
+        setTimeout(() => result.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
       } else if (tab) { tab.location.href = found.url; navigated = true; result.append(node('p', 'Abrimos tu partido en otra pestaña de YouTube.', 'redir')); }
       else result.append(node('p', 'Tu navegador bloqueó la pestaña nueva: tocá el botón verde para abrir el video.', 'redir'));
     }
@@ -210,7 +210,7 @@ function show(found, ctx = {}) {
   }
   if (found.snapped_seconds > 0) result.append(node('small', `Hubo un microcorte de la cámara: el video arranca ${found.snapped_seconds.toFixed(1)} s después.`));
   if (demo) result.append(node('p', 'Cálculo correcto. En la versión real este botón abre el video; la demo no usa enlaces a partidos.'));
-  else { const a = node('a', 'Ver en YouTube ↗', 'primary'); a.href = found.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; result.append(a, node('small', 'Se abre YouTube justo en ese momento del partido.')); }
+  else { const a = node('a', 'Ver en YouTube ', 'primary'); a.insertAdjacentHTML('beforeend', '<svg class="arr" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>'); a.href = MOBILE ? appUrl(found.url) : found.url; a.target = MOBILE ? '_self' : '_blank'; a.rel = 'noopener noreferrer'; result.append(a, node('small', 'Se abre YouTube justo en ese momento del partido.')); }
   result.append(node('small', `Cancha ${found.court_number} · Jornada ${fmtDay(found.sport_date)} · Video versión ${found.video_version}.`));
 }
 
