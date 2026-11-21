@@ -125,21 +125,6 @@ export async function resolveQuery(index, loadManifest, courtNumber, sportDate, 
   }
 }
 
-// Momento grabado más cercano a "when" (ms). available = [{real_start, real_end}] (semiabiertos [inicio, fin)).
-// Devuelve { ms, distance_s, side } o null si no hay nada a menos de maxS segundos. El fin se corre 1 s adentro.
-export function nearestAvailable(available, when, maxS = Infinity) {
-  let best = null;
-  for (const iv of available || []) {
-    const a = Math.ceil(Date.parse(iv.real_start) / 1000) * 1000, b = Math.floor((Date.parse(iv.real_end) - 1000) / 1000) * 1000;  // segundos enteros adentro del intervalo
-    if (!(b >= a)) continue;
-    for (const [ms, side] of [[a, 'after'], [b, 'before']]) {
-      const d = Math.abs(ms - when) / 1000;
-      if (d <= maxS && (!best || d < best.distance_s)) best = { ms, distance_s: d, side: ms >= when ? 'after' : 'before' };
-    }
-  }
-  return best;
-}
-
 // Carga desde el sitio: índice de la fecha + manifiesto activo.
 export async function searchOnline({ court, day, time }, base = 'data/') {
   if (!validDate(day) || !validClock(time)) throw Error('Revisá la fecha y la hora.');
