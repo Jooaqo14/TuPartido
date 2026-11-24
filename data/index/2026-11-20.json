@@ -3,7 +3,7 @@
   "sport_date": "2026-11-20",
   "timezone": "America/Argentina/Mendoza",
   "day_cutoff": "06:00",
-  "generated_at": "2026-11-24T18:07:57.818-03:00",
+  "generated_at": "2026-11-24T18:09:20.885-03:00",
   "journeys": [
     {
       "journey_id": "DV-FUT-C01-20261120",
@@ -20,9 +20,14 @@
     {
       "journey_id": "DV-FUT-C02-20261120",
       "court_number": 2,
-      "publication_status": "pending",
-      "published_at": null,
-      "active": null
+      "publication_status": "public",
+      "published_at": "2026-11-24T18:09:20.882-03:00",
+      "active": {
+        "video_version": 1,
+        "manifest": "manifests/DV-FUT-C02-20261120/v1.json",
+        "manifest_sha256": "eae4f3390fbd566afab091e7c400f912a5b912e3101e8949ffebdafc4890f1d1",
+        "youtube_video_id": "yNwv7SoHzAs"
+      }
     },
     {
       "journey_id": "DV-FUT-C03-20261120",
