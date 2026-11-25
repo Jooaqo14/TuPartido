@@ -105,6 +105,16 @@ function preview() {
   catch { $('#date-preview').textContent = ''; }
   $('#day-help').hidden = Number($('#time').value.slice(0, 2)) >= 6;
   $('#recent-note').hidden = demo || $('#day').value < addDays(today, -3);
+  updateStage();
+}
+// La tarjeta de la cancha muestra la búsqueda actual: cancha, día y el minuto sobre la línea de la noche (19:00 a 03:00).
+function updateStage() {
+  const t = $('#time').value || '20:05', court = form.elements.court.value;
+  const [h, m] = t.split(':').map(Number), mins = ((h * 60 + m - 19 * 60) % 1440 + 1440) % 1440;
+  $('#st-title').textContent = `${court ? 'Cancha ' + court : 'Tu partido'} · ${t.slice(0, 5)}`;
+  $('#st-day').textContent = cap(WD($('#day').value)).replace(/^(\S{3})\S*,?\s/, '$1 ');
+  $('#st-time').textContent = t.length === 5 ? `${t}:00` : t;
+  $('#st-mk').style.left = `${Math.min(mins / 480 * 100, 98)}%`;
 }
 form.addEventListener('input', () => { clearTimeout(redirTimer); preview(); });
 document.querySelectorAll('[data-shift]').forEach(b => b.onclick = () => {
@@ -200,7 +210,7 @@ function show(found, ctx = {}) {
     return;
   }
   const s = found.start_seconds;
-  result.append(node('span', demo ? 'SIMULACIÓN FICTICIA' : 'GRABACIÓN ENCONTRADA', 'badge'),
+  result.append(node('span', demo ? 'Simulación ficticia' : 'Grabación encontrada', 'badge'),
     node('h3', `Cancha ${found.court_number} · Mi partido`),
     node('p', `${ctx.asked ? 'Momento más cercano' : 'Tu momento'}: ${realTime(ctx.target)} · Desde ${Math.floor(s / 3600) ? Math.floor(s / 3600) + ' h ' : ''}${Math.floor(s % 3600 / 60)} min ${s % 60} s del video.`));
   if (ctx.asked) {
