@@ -88,3 +88,9 @@ footer{display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:cent
 .note{background:#0b1612;box-shadow:inset 0 0 0 1px #ecf1ec24}
 .grid4 button{background:#0b1612;border-color:#ecf1ec2e}
 }
+/* modo oscuro: resplandor degradado detrás del cuadro */
+@media(prefers-color-scheme:dark){
+.finder{position:relative;border-color:#cdf47c40;box-shadow:0 0 0 1px #cdf47c1f}
+.finder:before{content:"";position:absolute;z-index:-1;inset:-3px;border-radius:23px;pointer-events:none;
+ background:linear-gradient(120deg,#cdf47c,#2fb58a 45%,#1f7a62 70%,#cdf47c);filter:blur(34px);opacity:.7}
+}
