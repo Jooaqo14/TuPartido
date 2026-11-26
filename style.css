@@ -58,15 +58,23 @@ footer{display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:cent
 :root{--g1:#e8eed9;--g2:#dde7c8}
 @media(prefers-color-scheme:dark){:root{--g1:#1c3a2c;--g2:#173023}}
 .hero{position:relative;isolation:isolate}
-.field{position:absolute;z-index:-1;inset:-72px calc(50% - 50vw) 0;pointer-events:none;
+.hero-bg{position:absolute;z-index:-1;inset:-72px calc(50% - 50vw) 0;pointer-events:none;
  background:repeating-linear-gradient(90deg,var(--g1) 0 96px,var(--g2) 96px 192px);
  -webkit-mask-image:linear-gradient(#000 40%,transparent);mask-image:linear-gradient(#000 40%,transparent)}
-.field i{display:none}
 /* franja lima: el momento de color de la página */
 .how{position:relative;isolation:isolate;padding-block:96px;color:#10302a}
 .how:before{content:"";position:absolute;z-index:-1;inset:0 calc(50% - 50vw);background:var(--lime)}
 .how .eyebrow,.how .sub,.how li p{color:#2f4a3d}.how li>span{border-color:#10302a33;color:#10302a}.how .dot{background:#10302a}
 .faq{margin-top:0}
-@media(max-width:760px){.how{padding-block:64px}.field{background-size:auto}}
+@media(max-width:760px){.how{padding-block:64px}.hero-bg{background-size:auto}}
 
 .nav{position:relative;z-index:2}
+
+/* jugadas: pizarra táctica de fondo (solo pantallas anchas) */
+.hero:after{content:"";position:absolute;z-index:-1;inset:-72px calc(50% - 50vw) 0;pointer-events:none;display:none;
+ background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221440%22%20height%3D%22720%22%20viewBox%3D%220%200%201440%20720%22%20fill%3D%22none%22%3E%3Cdefs%3E%3Cmarker%20id%3D%22a%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%227%22%20markerHeight%3D%227%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M1%201%209%205%201%209%22%20stroke%3D%22%2310302a%22%20stroke-width%3D%221.6%22/%3E%3C/marker%3E%3C/defs%3E%3Cg%20stroke%3D%22%2310302a%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.2%22%3E%3Cpath%20d%3D%22M70%20500C40%20430%2040%20340%2082%20250%22%20stroke-dasharray%3D%223%209%22%20marker-end%3D%22url%28%23a%29%22/%3E%3Cpath%20d%3D%22M1360%20130C1400%20230%201396%20340%201352%20430%22%20stroke-dasharray%3D%223%209%22%20marker-end%3D%22url%28%23a%29%22/%3E%3Cpath%20d%3D%22M250%20560C380%20515%20520%20545%20650%20515%22%20marker-end%3D%22url%28%23a%29%22/%3E%3Cpath%20d%3D%22M61%20501l18%2018M79%20501l-18%2018%22/%3E%3Cpath%20d%3D%22M1351%20111l18%2018M1369%20111l-18%2018%22/%3E%3Cpath%20d%3D%22M241%20557l18%2018M259%20557l-18%2018%22/%3E%3Ccircle%20cx%3D%2282%22%20cy%3D%22236%22%20r%3D%2210%22/%3E%3Ccircle%20cx%3D%221350%22%20cy%3D%22444%22%20r%3D%2210%22/%3E%3Ccircle%20cx%3D%22662%22%20cy%3D%22512%22%20r%3D%2210%22/%3E%3C/g%3E%3C/svg%3E") center top/1440px 720px no-repeat;
+ -webkit-mask-image:linear-gradient(#000 92%,transparent);mask-image:linear-gradient(#000 92%,transparent)}
+@media(min-width:900px){.hero:after{display:block}}
+@media(not (prefers-color-scheme:dark)){.hero-bg{background:radial-gradient(#10302a1a 1.5px,transparent 1.6px) 0 0/28px 28px;
+ -webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}}
+@media(prefers-color-scheme:dark){.hero:after{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221440%22%20height%3D%22720%22%20viewBox%3D%220%200%201440%20720%22%20fill%3D%22none%22%3E%3Cdefs%3E%3Cmarker%20id%3D%22a%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%227%22%20markerHeight%3D%227%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M1%201%209%205%201%209%22%20stroke%3D%22%23e6f0dc%22%20stroke-width%3D%221.6%22/%3E%3C/marker%3E%3C/defs%3E%3Cg%20stroke%3D%22%23e6f0dc%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.22%22%3E%3Cpath%20d%3D%22M70%20500C40%20430%2040%20340%2082%20250%22%20stroke-dasharray%3D%223%209%22%20marker-end%3D%22url%28%23a%29%22/%3E%3Cpath%20d%3D%22M1360%20130C1400%20230%201396%20340%201352%20430%22%20stroke-dasharray%3D%223%209%22%20marker-end%3D%22url%28%23a%29%22/%3E%3Cpath%20d%3D%22M250%20560C380%20515%20520%20545%20650%20515%22%20marker-end%3D%22url%28%23a%29%22/%3E%3Cpath%20d%3D%22M61%20501l18%2018M79%20501l-18%2018%22/%3E%3Cpath%20d%3D%22M1351%20111l18%2018M1369%20111l-18%2018%22/%3E%3Cpath%20d%3D%22M241%20557l18%2018M259%20557l-18%2018%22/%3E%3Ccircle%20cx%3D%2282%22%20cy%3D%22236%22%20r%3D%2210%22/%3E%3Ccircle%20cx%3D%221350%22%20cy%3D%22444%22%20r%3D%2210%22/%3E%3Ccircle%20cx%3D%22662%22%20cy%3D%22512%22%20r%3D%2210%22/%3E%3C/g%3E%3C/svg%3E")}}
